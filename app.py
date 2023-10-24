@@ -3,92 +3,87 @@ import mysql.connector
 
 app = Flask(__name__)
 
-# สร้างการเชื่อมต่อกับ MySQL
-# db_connection = mysql.connector.connect(
-#     host="your_host",
-#     user="your_user",
-#     password="your_password",
-#     database="your_database"
-# )
 
 db_connection = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="123456",
+    password="",
     database="fbx-api",  # เปลี่ยนชื่อฐานข้อมูลเป็น "fbx-api"
-    port=4306
+    port = 3307
 )
-
-# class PostForm:
-#     def ConfirmPost(self, user_id, tag_friend_id, location_id, post_content):
-#         cursor = db_connection.cursor()
-#         insert_query = "INSERT INTO posts (User_ID, TagFriend_ID, Location_ID, Post_Content) VALUES (%s, %s, %s, %s)"
-#         data = (user_id, tag_friend_id, location_id, post_content)
-#         cursor.execute(insert_query, data)
-#         db_connection.commit()
-#         cursor.close()
-#         return {"message": "Post created successfully"}
 
 class PostForm:
     def ConfirmPost(self, user_id, tag_friend_ids, location_id, post_content):
         cursor = db_connection.cursor()
-        insert_query = "INSERT INTO posts (User_ID, TagFriend_ID, Location_ID, Post_Content) VALUES (%s, %s, %s, %s)"
+        insert_post_query = "INSERT INTO post (User_ID, Location_ID, Post_Content) VALUES (%s, %s, %s)"
+        cursor.execute(insert_post_query, (user_id, location_id, post_content))
+        db_connection.commit()
         
-        # สร้างสร้างคู่ (User_ID, TagFriend_ID) สำหรับแต่ละเพื่อน
-        data = [(user_id, tag_friend_id, location_id, post_content) for tag_friend_id in tag_friend_ids]
+        post_id = cursor.lastrowid  # Get the last inserted Post_ID
         
-        cursor.executemany(insert_query, data)
+        cursor.close()
+
+        # Insert the Post_ID into the tag_friends table
+        cursor = db_connection.cursor()
+        insert_post_tagged_query = "INSERT INTO tag_freinds (Post_ID, Friend_ID) VALUES (%s, %s)"
+        for tag_friend_id in tag_friend_ids:
+            cursor.execute(insert_post_tagged_query, (post_id, tag_friend_id))
+
         db_connection.commit()
         cursor.close()
-        return {"message": "Post created successfully"}
-    
+        return post_id
+
+
 class User:
-    def GetUser(self, user_id):
+    def Get_posts_by_user_id(self, user_id):
         cursor = db_connection.cursor()
-        select_query = "SELECT * FROM users WHERE User_ID = %s"
-        cursor.execute(select_query, (user_id,))
-        user_data = cursor.fetchone()
+
+        # Retrieve the user's own posts and tagged posts
+        select_user_posts_query = """
+            SELECT Post_ID, User_ID, Location_ID, Post_Content
+            FROM post
+            WHERE User_ID = %s
+            UNION ALL
+            SELECT p.Post_ID, p.User_ID, p.Location_ID, p.Post_Content
+            FROM post p
+            JOIN tag_freinds t ON p.Post_ID = t.Post_ID
+            WHERE t.Friend_ID = %s
+        """
+        cursor.execute(select_user_posts_query, (user_id, user_id))
+        all_posts = cursor.fetchall()
+
         cursor.close()
-        if user_data:
-            return user_data
-        else:
-            return {"message": "User not found"}, 404
+
+        # Sort the posts by Post_ID
+        all_posts.sort(key=lambda post: post[0])
+
+        keys = ["Post_ID", "User_ID", "Location_ID", "Post_Content"]
+        posts_dict = [dict(zip(keys, post)) for post in all_posts]
+
+        return posts_dict, 200  # Return response data and a status code
+
+        
+
 
 class Location:
-    def GetLocationInfo(self, location_id):
+    def Get_post_By_location_ID(self, location_id):
         cursor = db_connection.cursor()
-        select_query = "SELECT * FROM locations WHERE Location_ID = %s"
+        select_query = "SELECT Post_ID, User_ID, Location_ID, Post_Content FROM post WHERE Location_ID = %s"
         cursor.execute(select_query, (location_id,))
-        location_data = cursor.fetchone()
+        location_data = cursor.fetchall()
         cursor.close()
+
+        # Transform the list of tuples into a list of dictionaries
+        keys = ["Post_ID", "User_ID", "Location_ID", "Post_Content"]
+        location_data_dict = [dict(zip(keys, post)) for post in location_data]
+
         if location_data:
-            return location_data
+            return location_data_dict, 200  # Return response data and a status code
         else:
-            return {"message": "Location not found"}, 404
+            return {"message": "No posts found for this location"}, 404
 
-class TagFriend:
-    def getTagFriend(self, user_id):
-        cursor = db_connection.cursor()
-        select_query = "SELECT * FROM tag_friends WHERE User_ID = %s"
-        cursor.execute(select_query, (user_id,))
-        tag_friend_data = cursor.fetchall()
-        cursor.close()
-        if tag_friend_data:
-            return tag_friend_data
-        else:
-            return {"message": "Tag friends not found"}, 404
 
-# @app.route('/api/post', methods=['POST'])
-# def create_post():
-#     data = request.get_json()
-#     user_id = data['user_id']
-#     tag_friend_id = data['tag_friend_id']
-#     location_id = data['location_id']
-#     post_content = data['post_content']
 
-#     post_form = PostForm()
-#     response = post_form.ConfirmPost(user_id, tag_friend_id, location_id, post_content)
-#     return jsonify(response), 201
 
 @app.route('/api/post', methods=['POST'])
 def create_post():
@@ -102,28 +97,45 @@ def create_post():
     response = post_form.ConfirmPost(user_id, tag_friend_ids, location_id, post_content)
     return jsonify(response), 201
 
+
 @app.route('/', methods=['GET'])
-def get_all_post():
-    pass
+def home():
+    return "Hello, world"
+
+
+
+@app.route('/api/posts', methods=['GET'])
+def get_all_posts():
+    cursor = db_connection.cursor()
+    select_query = "SELECT * FROM post"
+    cursor.execute(select_query)
+    posts = cursor.fetchall()
+    cursor.close()
+    
+    if posts:
+        # Transform the list of tuples into a list of dictionaries
+        keys = ["Post_ID", "User_ID", "Location_ID", "Post_Content"]
+        posts_dict = [dict(zip(keys, post)) for post in posts]
+        
+        return jsonify(posts_dict), 200
+    else:
+        return {"message": "No posts found"}, 404
 
 
 @app.route('/api/user/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     user = User()
-    response, status_code = user.GetUser(user_id)
+    response, status_code = user.Get_posts_by_user_id(user_id)
     return jsonify(response), status_code
 
 @app.route('/api/location/<int:location_id>', methods=['GET'])
-def get_location(location_id):
+def get_posts_by_location_id(location_id):
     location = Location()
-    response, status_code = location.GetLocationInfo(location_id)
+    response, status_code = location.Get_post_By_location_ID(location_id)
     return jsonify(response), status_code
 
-@app.route('/api/tagfriend/<int:user_id>', methods=['GET'])
-def get_tagfriend(user_id):
-    tagfriend = TagFriend()
-    response, status_code = tagfriend.getTagFriend(user_id)
-    return jsonify(response), status_code
+
 
 if __name__ == "__main__":
+    app.debug = True
     app.run()
