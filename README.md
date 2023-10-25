@@ -9,5 +9,5 @@
 # Get Post By Location ID Sequence Diagram
 ![Alt text](https://github.com/G4-SDPX/FBX_API/blob/main/get_by_location_id_sequence.drawio.png)
 # Get Post By User ID Sequence Diagram
-![Alt text]((https://github.com/G4-SDPX/FBX_API/blob/main/get_by_user_id_sequence.drawio.png))
+![Alt text](https://github.com/G4-SDPX/FBX_API/blob/main/get_by_user_id_sequence.drawio.png)
 
