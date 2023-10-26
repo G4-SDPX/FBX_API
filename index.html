@@ -24,15 +24,16 @@
     </style>
 </head>
 <body>
-    <div id="results"></div>
-    <script>
+    <div id="results">
+    </div>
+<script>
     window.onload = function() {
         // ร้องขอข้อมูล API เมื่อหน้าเว็บโหลด
         fetch("http://127.0.0.1:5000/api/posts")
             .then(response => response.json())
             .then(data => {
                 const resultsElement = document.getElementById("results");
-                if (resultsElement) { // ตรวจสอบว่า resultsElement ไม่ใช่ null
+                if (resultsElement) {
                     if (data.length > 0) {
                         data.forEach(post => {
                             const postElement = document.createElement("div");
@@ -42,9 +43,34 @@
                                 <p>Location ID: ${post.Location_ID}</p>
                                 <p>User ID: ${post.User_ID}</p>
                                 <p>Post Content: ${post.Post_Content}</p>
+                                <form id="One_By_One_${post.User_ID}" method="GET">
+                                    <button name="User_ID">Click${post.User_ID}</button>
+                                </form>
                             `;
-    
+
                             resultsElement.appendChild(postElement);
+
+                            const form = document.getElementById(`One_By_One_${post.User_ID}`);
+                            if (form) {
+                                form.addEventListener("submit", function(event) {
+                                    event.preventDefault(); // Prevent the form submission
+                                    fetch(`http://127.0.0.1:5000/api/user/${post.User_ID}`)
+                                        .then(response => response.text())
+                                        .then(data => {
+                                            // Log the fetched data to the console
+                                            console.log(data);
+
+                                            // Store the fetched data in localStorage
+                                            localStorage.setItem("postsData", data);
+
+                                            // Redirect to results.html
+                                            window.location.href = "results.html";
+                                        })
+                                        .catch(error => {
+                                            console.error("Error:", error);
+                                        });
+                                });
+                            }
                         });
                     } else {
                         resultsElement.innerHTML = "No data available.";
@@ -58,6 +84,7 @@
             });
     };
 </script>
+
     
 
     <form id="seeAllPostsForm" method="GET">
