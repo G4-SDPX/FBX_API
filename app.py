@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import mysql.connector
 
 app = Flask(__name__)
 
+# สร้างตัวแปร CORS เพื่อตั้งค่าการแสดง CORS
+cors = CORS(app, resources={r"/api/*": {"origins": "http://127.0.0.1:5500"}})
 
 db_connection = mysql.connector.connect(
     host="localhost",

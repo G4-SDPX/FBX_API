@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View All Posts</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            text-align: center;
+        }
+        #results {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .post {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+    <h1>All Posts</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Retrieve the stored data from localStorage
+        const postsData = localStorage.getItem("postsData");
+        const resultsElement = document.getElementById("results");
+
+        if (postsData) {
+            const posts = JSON.parse(postsData);
+
+            if (posts.length > 0) {
+                posts.forEach(post => {
+                    const postElement = document.createElement("div");
+                    postElement.classList.add("post");
+                    postElement.innerHTML = `
+                        <h2>Post ID: ${post.Post_ID}</h2>
+                        <p>Location ID: ${post.Location_ID}</p>
+                        <p>User ID: ${post.User_ID}</p>
+                        <p>Post Content: ${post.Post_Content}</p>
+                    `;
+                    resultsElement.appendChild(postElement);
+                });
+            } else {
+                resultsElement.innerHTML = "No data available.";
+            }
+        } else {
+            resultsElement.innerHTML = "No data available.";
+        }
+    </script>
+</body>
+</html>

@@ -4,11 +4,136 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            text-align: center;
+        }
+        #results {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .post {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f8f8f8;
+        }
+    </style>
 </head>
 <body>
-    <form action="/api/posts" method="GET">
-        <button>Click See All Post</button>
+    <div id="results"></div>
+    <script>
+    window.onload = function() {
+        // ร้องขอข้อมูล API เมื่อหน้าเว็บโหลด
+        fetch("http://127.0.0.1:5000/api/posts")
+            .then(response => response.json())
+            .then(data => {
+                const resultsElement = document.getElementById("results");
+                if (resultsElement) { // ตรวจสอบว่า resultsElement ไม่ใช่ null
+                    if (data.length > 0) {
+                        data.forEach(post => {
+                            const postElement = document.createElement("div");
+                            postElement.classList.add("post");
+                            postElement.innerHTML = `
+                                <h2>Post ID: ${post.Post_ID}</h2>
+                                <p>Location ID: ${post.Location_ID}</p>
+                                <p>User ID: ${post.User_ID}</p>
+                                <p>Post Content: ${post.Post_Content}</p>
+                            `;
+    
+                            resultsElement.appendChild(postElement);
+                        });
+                    } else {
+                        resultsElement.innerHTML = "No data available.";
+                    }
+                } else {
+                    console.error("Element with id 'results' not found.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+    };
+</script>
+    
+
+    <form id="seeAllPostsForm" method="GET">
+        <button id="seeAllPostsButton">Click See All Post</button>
     </form>
+    <script>
+        document.getElementById("seeAllPostsForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent the form submission
+            fetch("http://127.0.0.1:5000/api/posts")
+                .then(response => response.text())
+                .then(data => {
+                    // Log the fetched data to the console
+                    console.log(data);
+    
+                    // Store the fetched data in localStorage
+                    localStorage.setItem("postsData", data);
+    
+                    // Redirect to results.html
+                    window.location.href = "results.html";
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        });
+    </script>
+
+    <form id="seeByuser" method="GET">
+        <button id="seeAllPostsButton">Click See All By User</button>
+    </form>
+    <script>
+        document.getElementById("seeByuser").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent the form submission
+            fetch("http://127.0.0.1:5000/api/user/1")
+                .then(response => response.text())
+                .then(data => {
+                    // Log the fetched data to the console
+                    console.log(data);
+
+                    // Store the fetched data in localStorage
+                    localStorage.setItem("postsData", data);
+
+                    // Redirect to results.html
+                    window.location.href = "results.html";
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        });
+    </script>
+
+    <form id="seeBylocation" method="GET">
+        <button id="seeAllPostsButton">Click See By Location</button>
+    </form>
+    <script>
+        document.getElementById("seeBylocation").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent the form submission
+            fetch("http://127.0.0.1:5000/api/location/1")
+                .then(response => response.text())
+                .then(data => {
+                    // Log the fetched data to the console
+                    console.log(data);
+
+                    // Store the fetched data in localStorage
+                    localStorage.setItem("postsData", data);
+
+                    // Redirect to results.html
+                    window.location.href = "results.html";
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        });
+    </script>
     
 </body>
 </html>
+
+
+
